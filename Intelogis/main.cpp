@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <optional>
 using namespace std;
 
 class Point {
@@ -117,45 +118,107 @@ bool PolygonContainsAPoint(const C& _V, const Point& point) {
 }
 
 template <typename C>
-Point PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2_1, const C& point2_2) {
+bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2_1, const C& point2_2, Point& _temp) {
+    double n{ 0 };
+    if (point1_2.getY() - point1_1.getY() != 0) {
+        double q = (point1_2.getX() - point1_1.getX()) / (point1_1.getY() - point1_2.getY());
+        double sn = point2_1.getX() - point2_2.getX() + (point2_1.getY() - point2_2.getY()) * q;
+        if (!sn) return false;
+        double fn = point2_1.getX() - point1_1.getX() + (point2_1.getY() - point1_1.getY()) * q;
+        n = fn / sn;
+    }
+    else {
+        if (!(point2_1.getY() - point2_2.getY()))
+            return false;
+        n = (point2_1.getY() - point1_1.getY()) / (point2_1.getY() - point2_2.getY());
+    }
+    _temp.setX(point2_1.getX() + (point2_2.getX() - point2_1.getX()) * n);
+    _temp.setY(point2_1.getY() + (point2_2.getY() - point2_1.getY()) * n);
 
+    //cout << _temp.getX() << "<" << point1_1.getX() << "&&" << point1_2.getX() << "<" << _temp.getX() << "||" << endl;
+    //cout << _temp.getX() << "<" << point1_2.getX() << "&&" << point1_1.getX() << "<" << _temp.getX() << "&&" << endl;
+    //cout << _temp.getX() << "<" << point2_1.getX() << "&&" << point2_2.getX() << "<" << _temp.getX() << "||" << endl;
+    //cout << _temp.getX() << "<" << point2_2.getX() << "&&" << point2_1.getX() << "<" << _temp.getX() << "&&" << endl;
+    //cout << _temp.getY() << "<" << point1_1.getY() << "&&" << point1_2.getY() << "<" << _temp.getY() << "||" << endl;
+    //cout << _temp.getY() << "<" << point1_2.getY() << "&&" << point1_1.getY() << "<" << _temp.getY() << "&&" << endl;
+    //cout << _temp.getY() << "<" << point2_1.getY() << "&&" << point2_2.getY() << "<" << _temp.getY() << "||" << endl;
+    //cout << _temp.getY() << "<" << point2_2.getY() << "&&" << point2_1.getY() << "<" << _temp.getY() << endl;
 
-
+    if (((_temp.getX() <= point1_1.getX() && point1_2.getX() <= _temp.getX()) ||
+         (_temp.getX() <= point1_2.getX() && point1_1.getX() <= _temp.getX())) &&
+        ((_temp.getX() <= point2_1.getX() && point2_2.getX() <= _temp.getX()) ||
+         (_temp.getX() <= point2_2.getX() && point2_1.getX() <= _temp.getX())) &&
+        ((_temp.getY() <= point1_1.getY() && point1_2.getY() <= _temp.getY()) ||
+         (_temp.getY() <= point1_2.getY() && point1_1.getY() <= _temp.getY())) &&
+        ((_temp.getY() <= point2_1.getY() && point2_2.getY() <= _temp.getY()) ||
+         (_temp.getY() <= point2_2.getY() && point2_1.getY() <= _temp.getY())))
+        return true;
+    else return false;
 }
+
+    //double AB{ (point1_2.getX() - point1_1.getX()) / (point1_2.getY() - point1_1.getY()) };
+    //double CD{ (point2_2.getX() - point2_1.getX()) / (point2_2.getY() - point2_1.getY()) };
+    //double Y{ (CD * point2_1.getY()- point2_1.getX() - AB*point1_1.getY() + point1_1.getX()) / (CD-AB)};
+    //double X{ (Y - point1_1.getY()) * AB + point1_1.getX() };
+    //if (((X < point1_1.getX() && point1_2.getX() < X) || (X < point1_2.getX() && point1_1.getX() < X)) &&
+    //    ((Y < point1_1.getY() && point1_2.getY() < Y) || (Y < point1_2.getY() && point1_1.getY() < Y)) &&
+    //    ((X < point2_1.getX() && point2_2.getX() < X) || (X < point2_2.getX() && point2_1.getX() < X)) &&
+    //    ((Y < point2_1.getY() && point2_2.getY() < Y) || (Y < point2_2.getY() && point2_1.getY() < Y)))
+    //    return Point{ X,Y };
+    //else {};
 
 int main() {
     vector<Point> _v{
+        Point{2,1},
+        Point{2,4},
         Point{4,7},
-        Point{6,6},
-        Point{7,3},
-        Point{2,2},
-        Point{3,0},
-        Point{6,1},
-        Point{2,5},
-        Point{5,0}
+        Point{4.5,0},
+        Point{7,4},
+        Point{7,1}
     };
 
     vector<Point> _s{
-        Point{1,1},
-        Point{3,3},
-        Point{3,1},
-        Point{1,3}
+        Point{7,-1},
+        Point{3,7},
+        Point{9,2},
+        Point{8,6}
     };
     PolygonBuild(_v);
-    for (auto&& el : _v) {
+    PolygonBuild(_s);
+
+    /*for (auto&& el : _v) {
         cout << el.getX() << ";" << el.getY() << endl;
     }
     cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 0,0 }) << endl;
     cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 3,7 }) << endl;
     cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 4,3 }) << endl;
-    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 5,6 }) << endl;
+    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 5,6 }) << endl;*/
 
 
-    PolygonBuild(_s);
-    for (auto&& el : _s) {
-        cout << el.getX() << ";" << el.getY() << endl;
+    //std::cout << "Square _S is " << PolygonSquare(_s) << endl;
+
+    auto begin_v{ begin(_v) };
+    auto end_v{ end(_v) };
+    auto begin_s{ begin(_s) };
+    auto end_s{ end(_s) };
+    vector<Point> cross_square;
+    Point _temp(0, 0);
+    while (begin_v != end_v) {
+        begin_s = begin(_s);
+        while (begin_s != end_s) {
+            if (PolygonsSidesCrossing
+            (*begin_v,
+                ((next(begin_v) == end_v) ? *begin(_v) : *next(begin_v)),
+                *begin_s,
+                ((next(begin_s) == end_s) ? *begin(_s) : *next(begin_s)),
+                _temp)) {
+                cout << _temp << endl;
+                cross_square.push_back(_temp);
+            }
+            ++begin_s;
+        }
+        ++begin_v;
     }
-    std::cout << "Square _S is " << PolygonSquare(_s) << endl;
     return 0;
 }
 
