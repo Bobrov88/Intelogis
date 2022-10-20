@@ -2,7 +2,6 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
-#include <optional>
 using namespace std;
 
 class Point {
@@ -38,6 +37,11 @@ ostream& operator<<(ostream& os, const Point& obj) {
     os << "[" << obj.getX() << ";" << obj.getY() << "]";
     return os;
 }
+
+ostream& operator<<(ostream& os, const vector<Point>& _v) {
+    for (auto&& el : _v) cout << el << endl;
+    return os;
+    }
 
 template <typename C>
 double lineByTwoPoint(const C& X, const C& X1Y1, const C& X2Y2) {
@@ -108,8 +112,12 @@ bool PolygonContainsAPoint(const C& _V, const Point& point) {
     auto it{ std::begin(_V) };
     short minus{ 0 };
     short plus{ 0 };
+    double lineByPointResult{ 0 };
     while (it != end(_V) - 1) {
-        (lineByTwoPoint(begin(vector<Point> {point}), it, next(it)) < 0) ? ++minus : ++plus; // ?????????????????????????????????????????????????????????????????????
+        lineByPointResult = lineByTwoPoint(begin(vector<Point> {point}), it, next(it));
+        if (lineByPointResult < 0) ++minus;
+        if (lineByPointResult > 0) ++plus;
+        if (lineByPointResult == 0) return false;// ????????????????begin(vector<Point> {point} ?????????????????????????????????????????
         ++it;
     }
     if ((minus && !plus) || (!minus && plus))
@@ -156,6 +164,43 @@ bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2
     else return false;
 }
 
+template <typename C>
+C PolygonsCrossing(const C& _V1, const C& _V2) {
+    vector<Point> crossVector;
+    auto begin_v1{ begin(_V1) };
+    auto begin_v2{ begin(_V2) };
+    Point _temp(0, 0);
+    while (begin_v1 != end(_V1)) {
+        begin_v2 = begin(_V2);
+        while (begin_v2 != end(_V2)) {
+            if (PolygonsSidesCrossing
+            (*begin_v1,
+                ((next(begin_v1) == end(_V1)) ? *begin(_V1) : *next(begin_v1)),
+                *begin_v2,
+                ((next(begin_v2) == end(_V2)) ? *begin(_V2) : *next(begin_v2)),
+                _temp)) {
+                crossVector.push_back(_temp);
+            }
+            ++begin_v2;
+        }
+        ++begin_v1;
+    }
+    begin_v2 = begin(_V2);
+    while (begin_v2 != end(_V2)) {
+        if (PolygonContainsAPoint(_V1, *begin_v2))
+            crossVector.push_back(*begin_v2);
+        ++begin_v2;
+    }
+    begin_v1 = begin(_V1);
+    while (begin_v1 != end(_V1)) {
+        if (PolygonContainsAPoint(_V2, *begin_v1))
+            crossVector.push_back(*begin_v1);
+        ++begin_v1;
+    }
+    PolygonBuild(crossVector);
+    return crossVector;
+}
+
     //double AB{ (point1_2.getX() - point1_1.getX()) / (point1_2.getY() - point1_1.getY()) };
     //double CD{ (point2_2.getX() - point2_1.getX()) / (point2_2.getY() - point2_1.getY()) };
     //double Y{ (CD * point2_1.getY()- point2_1.getX() - AB*point1_1.getY() + point1_1.getX()) / (CD-AB)};
@@ -170,55 +215,31 @@ bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2
 int main() {
     vector<Point> _v{
         Point{2,1},
-        Point{2,4},
-        Point{4,7},
-        Point{4.5,0},
-        Point{7,4},
-        Point{7,1}
+        Point{1,4},
+        Point{3,2},
+        Point{4,4},
+        Point{4,6},
+        Point{5,2},
+        Point{6,1},
+        Point{7,4}
     };
+    PolygonBuild(_v);
+    _v.erase(find_if(begin(_v), end(_v), [&](auto element) {
+        return element.getUsed() == false; }),
+        end(_v));
+    cout << _v;
 
-    vector<Point> _s{
+    /*vector<Point> _s{
         Point{7,-1},
         Point{3,7},
         Point{9,2},
-        Point{8,6}
+        Point{8,6},
+        Point{5,2},
     };
     PolygonBuild(_v);
     PolygonBuild(_s);
 
-    /*for (auto&& el : _v) {
-        cout << el.getX() << ";" << el.getY() << endl;
-    }
-    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 0,0 }) << endl;
-    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 3,7 }) << endl;
-    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 4,3 }) << endl;
-    cout << std::boolalpha << PolygonContainsAPoint(_v, Point{ 5,6 }) << endl;*/
-
-
-    //std::cout << "Square _S is " << PolygonSquare(_s) << endl;
-
-    auto begin_v{ begin(_v) };
-    auto end_v{ end(_v) };
-    auto begin_s{ begin(_s) };
-    auto end_s{ end(_s) };
-    vector<Point> cross_square;
-    Point _temp(0, 0);
-    while (begin_v != end_v) {
-        begin_s = begin(_s);
-        while (begin_s != end_s) {
-            if (PolygonsSidesCrossing
-            (*begin_v,
-                ((next(begin_v) == end_v) ? *begin(_v) : *next(begin_v)),
-                *begin_s,
-                ((next(begin_s) == end_s) ? *begin(_s) : *next(begin_s)),
-                _temp)) {
-                cout << _temp << endl;
-                cross_square.push_back(_temp);
-            }
-            ++begin_s;
-        }
-        ++begin_v;
-    }
+    cout << PolygonSquare(PolygonsCrossing(_v,_s)) << endl;*/
     return 0;
 }
 
