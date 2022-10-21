@@ -1,7 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 #include <iterator>
+#include <string>
+#include <list>
+#include <numeric>
 using namespace std;
 
 class Point {
@@ -33,13 +37,54 @@ public:
     ~Point() {};
 };
 
+string findDepotID(string& s) {
+    size_t index{ 0 };
+    size_t step{ 0 };
+    while (step < 6) {
+        index = s.find('\t', index);
+        ++index;
+        ++step;
+    }
+    return s.substr(index, s.find('\t', index) - index);
+}
+
+string isIndNull(string& s) {
+    size_t index{ 0 };
+    size_t step{ 0 };
+    while (step < 7) {
+        index = s.find('\t', index);
+        ++index;
+        ++step;
+    }
+    return s.substr(index, s.find('\t', index) - index);
+}
+
+Point readDepotCoord(string& s) {
+    Point _temp(0, 0);
+    size_t index{ 0 };
+    size_t step{ 0 };
+    while (step < 22) {
+        index = s.find('\t', index);
+        ++index;
+        ++step;
+    }
+    _temp.setX(
+        std::stod(
+        s.substr(index, s.find('\t', index) - index)));
+    index = s.find('\t', index);
+    _temp.setY(
+        std::stod(
+            s.substr(index, s.find('\n', index) - index)));
+    return _temp;
+}
+
 ostream& operator<<(ostream& os, const Point& obj) {
     os << "[" << obj.getX() << ";" << obj.getY() << "]";
     return os;
 }
 
 ostream& operator<<(ostream& os, const vector<Point>& _v) {
-    for (auto&& el : _v) cout << el << endl;
+    for (auto&& el : _v) std::cout << el << endl;
     return os;
     }
 
@@ -88,6 +133,9 @@ void PolygonBuild(C& _V) {
         }
         ++_begin;
     }
+    _V.erase(find_if(begin(_V), end(_V), [&](auto element) {
+        return element.getUsed() == false; }),
+        end(_V));
 }
 
 template <typename C>
@@ -117,7 +165,7 @@ bool PolygonContainsAPoint(const C& _V, const Point& point) {
         lineByPointResult = lineByTwoPoint(begin(vector<Point> {point}), it, next(it));
         if (lineByPointResult < 0) ++minus;
         if (lineByPointResult > 0) ++plus;
-        if (lineByPointResult == 0) return false;// ????????????????begin(vector<Point> {point} ?????????????????????????????????????????
+        if (lineByPointResult == 0) return false;
         ++it;
     }
     if ((minus && !plus) || (!minus && plus))
@@ -142,15 +190,6 @@ bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2
     }
     _temp.setX(point2_1.getX() + (point2_2.getX() - point2_1.getX()) * n);
     _temp.setY(point2_1.getY() + (point2_2.getY() - point2_1.getY()) * n);
-
-    //cout << _temp.getX() << "<" << point1_1.getX() << "&&" << point1_2.getX() << "<" << _temp.getX() << "||" << endl;
-    //cout << _temp.getX() << "<" << point1_2.getX() << "&&" << point1_1.getX() << "<" << _temp.getX() << "&&" << endl;
-    //cout << _temp.getX() << "<" << point2_1.getX() << "&&" << point2_2.getX() << "<" << _temp.getX() << "||" << endl;
-    //cout << _temp.getX() << "<" << point2_2.getX() << "&&" << point2_1.getX() << "<" << _temp.getX() << "&&" << endl;
-    //cout << _temp.getY() << "<" << point1_1.getY() << "&&" << point1_2.getY() << "<" << _temp.getY() << "||" << endl;
-    //cout << _temp.getY() << "<" << point1_2.getY() << "&&" << point1_1.getY() << "<" << _temp.getY() << "&&" << endl;
-    //cout << _temp.getY() << "<" << point2_1.getY() << "&&" << point2_2.getY() << "<" << _temp.getY() << "||" << endl;
-    //cout << _temp.getY() << "<" << point2_2.getY() << "&&" << point2_1.getY() << "<" << _temp.getY() << endl;
 
     if (((_temp.getX() <= point1_1.getX() && point1_2.getX() <= _temp.getX()) ||
          (_temp.getX() <= point1_2.getX() && point1_1.getX() <= _temp.getX())) &&
@@ -201,45 +240,66 @@ C PolygonsCrossing(const C& _V1, const C& _V2) {
     return crossVector;
 }
 
-    //double AB{ (point1_2.getX() - point1_1.getX()) / (point1_2.getY() - point1_1.getY()) };
-    //double CD{ (point2_2.getX() - point2_1.getX()) / (point2_2.getY() - point2_1.getY()) };
-    //double Y{ (CD * point2_1.getY()- point2_1.getX() - AB*point1_1.getY() + point1_1.getX()) / (CD-AB)};
-    //double X{ (Y - point1_1.getY()) * AB + point1_1.getX() };
-    //if (((X < point1_1.getX() && point1_2.getX() < X) || (X < point1_2.getX() && point1_1.getX() < X)) &&
-    //    ((Y < point1_1.getY() && point1_2.getY() < Y) || (Y < point1_2.getY() && point1_1.getY() < Y)) &&
-    //    ((X < point2_1.getX() && point2_2.getX() < X) || (X < point2_2.getX() && point2_1.getX() < X)) &&
-    //    ((Y < point2_1.getY() && point2_2.getY() < Y) || (Y < point2_2.getY() && point2_1.getY() < Y)))
-    //    return Point{ X,Y };
-    //else {};
-
 int main() {
-    vector<Point> _v{
-        Point{2,1},
-        Point{1,4},
-        Point{3,2},
-        Point{4,4},
-        Point{4,6},
-        Point{5,2},
-        Point{6,1},
-        Point{7,4}
-    };
-    PolygonBuild(_v);
-    _v.erase(find_if(begin(_v), end(_v), [&](auto element) {
-        return element.getUsed() == false; }),
-        end(_v));
-    cout << _v;
 
-    /*vector<Point> _s{
-        Point{7,-1},
-        Point{3,7},
-        Point{9,2},
-        Point{8,6},
-        Point{5,2},
-    };
-    PolygonBuild(_v);
-    PolygonBuild(_s);
+    vector<vector<Point>> BigData;
 
-    cout << PolygonSquare(PolygonsCrossing(_v,_s)) << endl;*/
+    ifstream waypoint{ "waypoint.txt" };
+    if (!waypoint.is_open()) {
+        std::cout << "File \"Waypoint.txt\" not found!" << endl;
+        return -1;
+    }
+    ifstream depot{ "depot.txt" };
+    if (!depot.is_open()) {
+        std::cout << "File \"Depot.txt\" not found!" << endl;
+        return -1;
+    }
+
+    string lineFromWaypoint{};
+    string lineFromDepot{};
+    auto _begin{ depot.tellg() };
+    int counter{ 0 };
+
+    getline(waypoint, lineFromWaypoint);
+    while (true) {
+        getline(waypoint, lineFromWaypoint);
+        if (waypoint.eof()) break;
+        if (isIndNull(lineFromWaypoint) == "0")
+            continue;
+        BigData.push_back(vector<Point> {});
+        while (!waypoint.eof() && isIndNull(lineFromWaypoint) != "0") {
+            lineFromWaypoint = findDepotID(lineFromWaypoint);
+            depot.seekg(_begin);
+            while (true)
+            {
+                getline(depot, lineFromDepot);
+                if (lineFromDepot.substr(0, lineFromDepot.find('\t', 0)) == lineFromWaypoint) {
+                    BigData.back().push_back(readDepotCoord(lineFromDepot));
+                std::cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
+                    break;
+                }
+            }
+            getline(waypoint, lineFromWaypoint);
+        }
+    }
+
+    double BigSquare{};
+
+    for (auto&& areas : BigData) {
+        BigSquare += PolygonSquare(areas);
+    }
+
+    double CrossSquare{};
+    auto it  {begin(BigData)};
+    for (; it != end(BigData); ++it) 
+        for (auto it2{ next(it) }; it2 != end(BigData); ++it2) 
+            CrossSquare+=PolygonSquare(PolygonsCrossing(*it, *it2));
+
+    std::cout << "BigSquare = " << BigSquare << endl;
+    std::cout << "CrossSquare = " << CrossSquare << endl;
+    std::cout << "Percent is " << CrossSquare / BigSquare * 100;
+    waypoint.close();
+    depot.close();
     return 0;
 }
 
