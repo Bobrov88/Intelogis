@@ -5,6 +5,7 @@
 #include <iterator>
 #include <string>
 #include <list>
+#include <conio.h>
 #include <numeric>
 using namespace std;
 
@@ -24,6 +25,7 @@ public:
     void setX(const double _x) { x = _x; }
     void setY(const double _y) { y = _y; }
     void setUsed() { isUsedWhileBuildingPolygon = true; }
+    void setUnused() { isUsedWhileBuildingPolygon = false; }
     double getX() const { return x; }
     double getY() const { return y; }
     bool getUsed() const { return isUsedWhileBuildingPolygon; }
@@ -33,6 +35,11 @@ public:
         this->isUsedWhileBuildingPolygon =
             other.isUsedWhileBuildingPolygon;
         return *this;
+    }
+
+    bool operator==(const Point& other) {
+        return this->x == other.x &&
+            this->y == other.y;
     }
     ~Point() {};
 };
@@ -48,6 +55,18 @@ string findDepotID(string& s) {
     return s.substr(index, s.find('\t', index) - index);
 }
 
+double distanceToPrevPoint(string& s) {
+    size_t index{ 0 };
+    size_t step{ 0 };
+    while (step < 10) {
+        index = s.find('\t', index);
+        ++index;
+        ++step;
+    }
+    return std::stod(s.substr(index, s.find('\t', index) - index));
+
+}
+
 string isIndNull(string& s) {
     size_t index{ 0 };
     size_t step{ 0 };
@@ -59,11 +78,11 @@ string isIndNull(string& s) {
     return s.substr(index, s.find('\t', index) - index);
 }
 
-Point readDepotCoord(string& s) {
+Point readDepotCoord(string& s, size_t _step) {
     Point _temp(0, 0);
     size_t index{ 0 };
     size_t step{ 0 };
-    while (step < 22) {
+    while (step < _step) {
         index = s.find('\t', index);
         ++index;
         ++step;
@@ -226,23 +245,60 @@ C PolygonsCrossing(const C& _V1, const C& _V2) {
     }
     begin_v2 = begin(_V2);
     while (begin_v2 != end(_V2)) {
-        if (PolygonContainsAPoint(_V1, *begin_v2))
+        if (PolygonContainsAPoint(_V1, *begin_v2)) {
             crossVector.push_back(*begin_v2);
+            crossVector.back().setUnused();
+        }
         ++begin_v2;
     }
     begin_v1 = begin(_V1);
     while (begin_v1 != end(_V1)) {
-        if (PolygonContainsAPoint(_V2, *begin_v1))
+        if (PolygonContainsAPoint(_V2, *begin_v1)) {
             crossVector.push_back(*begin_v1);
+            crossVector.back().setUnused();
+        }
         ++begin_v1;
     }
     PolygonBuild(crossVector);
     return crossVector;
 }
 
+void findRealPositionForXandY(size_t& lat, string& line) {
+    size_t tabPos{};
+    for (char& c : line) {
+        if (c == '\t')
+            ++tabPos;
+        }
+        lat = tabPos-1;
+}
+
+template <typename C, typename T>
+double ShortestWay(C& _V, T& base) {
+    double distance{ 0 };
+
+
+
+    return distance;
+}
+
 int main() {
 
     vector<vector<Point>> BigData;
+    vector<double> Distances{0};
+
+   /* vector<Point> temp{0 
+        {1,1},
+        {2,1},
+        {1,2},
+        {1,3},
+        {3,1},
+        {3,3},
+        {1.5, 1},
+        {2,3}
+    };
+
+    PolygonBuild(temp);
+    cout << temp;*/
 
     ifstream waypoint{ "waypoint.txt" };
     if (!waypoint.is_open()) {
@@ -259,6 +315,12 @@ int main() {
     string lineFromDepot{};
     auto _begin{ depot.tellg() };
     int counter{ 0 };
+    size_t latitudeitudeLineNumber{};
+    getline(depot, lineFromDepot);
+    findRealPositionForXandY(latitudeitudeLineNumber,
+        lineFromDepot);
+    getline(depot, lineFromDepot);
+    Point Base(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
 
     getline(waypoint, lineFromWaypoint);
     while (true) {
@@ -267,6 +329,7 @@ int main() {
         if (isIndNull(lineFromWaypoint) == "0")
             continue;
         BigData.push_back(vector<Point> {});
+        Distances.back() += distanceToPrevPoint(lineFromWaypoint);
         while (!waypoint.eof() && isIndNull(lineFromWaypoint) != "0") {
             lineFromWaypoint = findDepotID(lineFromWaypoint);
             depot.seekg(_begin);
@@ -274,13 +337,16 @@ int main() {
             {
                 getline(depot, lineFromDepot);
                 if (lineFromDepot.substr(0, lineFromDepot.find('\t', 0)) == lineFromWaypoint) {
-                    BigData.back().push_back(readDepotCoord(lineFromDepot));
-                std::cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
+                    BigData.back().push_back(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
+                    std::cout << BigData.back().back() << "\t";
+                    std::cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
                     break;
                 }
             }
             getline(waypoint, lineFromWaypoint);
         }
+     //   _getch();
+        BigData.back().erase(std::unique(BigData.back().begin(),BigData.back().end()),BigData.back().end());
     }
 
     double BigSquare{};
