@@ -7,6 +7,8 @@
 #include <list>
 #include <conio.h>
 #include <numeric>
+#include <math.h>
+#define ANGLETOLENGTH 66.3
 using namespace std;
 
 class Point {
@@ -14,7 +16,7 @@ class Point {
     double y;
     bool isUsedWhileBuildingPolygon;
 public:
-    Point(double _x, double _y) : x{ _x },
+    explicit Point(double _x, double _y) : x{ _x },
         y{ _y },
         isUsedWhileBuildingPolygon{ 0 }
     {}
@@ -102,7 +104,8 @@ ostream& operator<<(ostream& os, const Point& obj) {
     return os;
 }
 
-ostream& operator<<(ostream& os, const vector<Point>& _v) {
+template <typename T>
+ostream& operator<<(ostream& os, const vector<T>& _v) {
     for (auto&& el : _v) std::cout << el << endl;
     return os;
     }
@@ -162,6 +165,8 @@ double PolygonSquare(const C& _V) {
     double ps1{ 0 };
     double ps2{ 0 };
     auto n{ _V.size() };
+    if (n == 0) return 0;
+ //   cout << "N is " << n << endl;
     for (size_t i{ 0 }; i < n - 1; ++i) {
         ps1 += _V[i].getX() * _V[i + 1].getY();
         ps2 += _V[i + 1].getX() * _V[i].getY();
@@ -259,7 +264,8 @@ C PolygonsCrossing(const C& _V1, const C& _V2) {
         }
         ++begin_v1;
     }
-    PolygonBuild(crossVector);
+    if (crossVector.size() != 0)
+        PolygonBuild(crossVector);
     return crossVector;
 }
 
@@ -272,33 +278,51 @@ void findRealPositionForXandY(size_t& lat, string& line) {
         lat = tabPos-1;
 }
 
+template <typename T>
+double twoPointDistance(const T& A, const T& B) {
+    return sqrt(pow(A.getX() - B.getX(), 2) +
+                pow(A.getY() - B.getY(), 2));
+}
+
 template <typename C, typename T>
 double ShortestWay(C& _V, T& base) {
     double distance{ 0 };
-
-
-
+    double mindistance{ DBL_MAX };
+    double currentdistance{ 0 };
+    auto pV{ _V.begin() };
+    for (auto&& el : _V) {
+        el.setUnused();
+        currentdistance = twoPointDistance(el, base);
+        if (mindistance > currentdistance) {
+            mindistance = currentdistance;
+            *pV = el;
+        }
+    }
+    distance += mindistance;
+    pV->setUsed();
+    swap(*_V.begin(), *pV);
+    for (auto it(begin(_V)); it != prev(end(_V)); ++it) {
+        mindistance = twoPointDistance(*it, *next(it));
+        for (auto it2(next(it)); it2 != end(_V); ++it2) {
+            currentdistance = twoPointDistance(*it, *it2);
+            if ((mindistance > currentdistance) &&
+                (!it2->getUsed())) {
+                mindistance = currentdistance;
+                pV = it2;
+            }
+        }
+        distance += mindistance;
+        pV->setUsed();
+        swap(*(next(it)), *pV);
+    }
     return distance;
 }
 
 int main() {
 
     vector<vector<Point>> BigData;
-    vector<double> Distances{0};
-
-   /* vector<Point> temp{0 
-        {1,1},
-        {2,1},
-        {1,2},
-        {1,3},
-        {3,1},
-        {3,3},
-        {1.5, 1},
-        {2,3}
-    };
-
-    PolygonBuild(temp);
-    cout << temp;*/
+ //   BigData.reserve(100);
+    vector<double> Distances;
 
     ifstream waypoint{ "waypoint.txt" };
     if (!waypoint.is_open()) {
@@ -322,6 +346,10 @@ int main() {
     getline(depot, lineFromDepot);
     Point Base(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
 
+    double ShortestDistances{ 0 };
+    double RealDistances{ 0 };
+
+
     getline(waypoint, lineFromWaypoint);
     while (true) {
         getline(waypoint, lineFromWaypoint);
@@ -329,8 +357,10 @@ int main() {
         if (isIndNull(lineFromWaypoint) == "0")
             continue;
         BigData.push_back(vector<Point> {});
-        Distances.back() += distanceToPrevPoint(lineFromWaypoint);
+        BigData.back().reserve(100);
+        Distances.push_back(0);
         while (!waypoint.eof() && isIndNull(lineFromWaypoint) != "0") {
+            Distances.back() += distanceToPrevPoint(lineFromWaypoint);
             lineFromWaypoint = findDepotID(lineFromWaypoint);
             depot.seekg(_begin);
             while (true)
@@ -338,8 +368,8 @@ int main() {
                 getline(depot, lineFromDepot);
                 if (lineFromDepot.substr(0, lineFromDepot.find('\t', 0)) == lineFromWaypoint) {
                     BigData.back().push_back(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
-                    std::cout << BigData.back().back() << "\t";
-                    std::cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
+                    //cout << BigData.back().back() << "\t";
+                    //cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
                     break;
                 }
             }
@@ -347,7 +377,15 @@ int main() {
         }
      //   _getch();
         BigData.back().erase(std::unique(BigData.back().begin(),BigData.back().end()),BigData.back().end());
+      //  BigData.back().shrink_to_fit();
     }
+
+    //BigData.shrink_to_fit();
+    for (auto&& areas : Distances)
+        RealDistances += areas;
+
+    for (auto&& areas : BigData)
+        ShortestDistances += ShortestWay(areas, Base);
 
     double BigSquare{};
 
@@ -355,15 +393,22 @@ int main() {
         BigSquare += PolygonSquare(areas);
     }
 
+ //   cout << Distances;
+
     double CrossSquare{};
-    auto it  {begin(BigData)};
-    for (; it != end(BigData); ++it) 
-        for (auto it2{ next(it) }; it2 != end(BigData); ++it2) 
-            CrossSquare+=PolygonSquare(PolygonsCrossing(*it, *it2));
+    for (auto it{ begin(BigData) }; it != prev(end(BigData)); ++it)
+        for (auto it2{ next(it) }; it2 != end(BigData); ++it2) {
+            //cout << *it << "--";
+            //cout << *it2 << endl;
+            CrossSquare += PolygonSquare(PolygonsCrossing(*it, *it2));
+        }
 
     std::cout << "BigSquare = " << BigSquare << endl;
     std::cout << "CrossSquare = " << CrossSquare << endl;
-    std::cout << "Percent is " << CrossSquare / BigSquare * 100;
+    std::cout << "Percent is " << CrossSquare / BigSquare * 100<<endl;
+    std::cout << "Shortest distance is " << ShortestDistances * ANGLETOLENGTH << endl;
+    std::cout<< "Real distance is " << RealDistances << endl;
+    std::cout << "Percent is " << (ShortestDistances*ANGLETOLENGTH) / RealDistances * 100 << endl;
     waypoint.close();
     depot.close();
     return 0;
