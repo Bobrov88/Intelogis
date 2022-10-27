@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream>  // including libraries
 #include <vector>
 #include <algorithm>
 #include <fstream>
@@ -8,10 +8,10 @@
 #include <conio.h>
 #include <numeric>
 #include <math.h>
-#define ANGLETOLENGTH 66.3
+constexpr auto ANGLETOLENGTH = 66.3; // average koeff of converting from angles of latitude to km
 using namespace std;
 
-class Point {
+class Point {  // Point class
     double x;
     double y;
     bool isUsedWhileBuildingPolygon;
@@ -46,7 +46,7 @@ public:
     ~Point() {};
 };
 
-string findDepotID(string& s) {
+string findDepotID(string& s) {     // reading depotID from file
     size_t index{ 0 };
     size_t step{ 0 };
     while (step < 6) {
@@ -57,7 +57,7 @@ string findDepotID(string& s) {
     return s.substr(index, s.find('\t', index) - index);
 }
 
-double distanceToPrevPoint(string& s) {
+double distanceToPrevPoint(string& s) { // reading distance from file
     size_t index{ 0 };
     size_t step{ 0 };
     while (step < 10) {
@@ -69,7 +69,7 @@ double distanceToPrevPoint(string& s) {
 
 }
 
-string isIndNull(string& s) {
+string isIndNull(string& s) {       // reading data defining whether an object is the Base or not
     size_t index{ 0 };
     size_t step{ 0 };
     while (step < 7) {
@@ -80,7 +80,7 @@ string isIndNull(string& s) {
     return s.substr(index, s.find('\t', index) - index);
 }
 
-Point readDepotCoord(string& s, size_t _step) {
+Point readDepotCoord(string& s, size_t _step) { // reading coordinates x and y
     Point _temp(0, 0);
     size_t index{ 0 };
     size_t step{ 0 };
@@ -99,19 +99,19 @@ Point readDepotCoord(string& s, size_t _step) {
     return _temp;
 }
 
-ostream& operator<<(ostream& os, const Point& obj) {
+ostream& operator<<(ostream& os, const Point& obj) {        // operator << overloading for printing Point
     os << "[" << obj.getX() << ";" << obj.getY() << "]";
     return os;
 }
 
 template <typename T>
-ostream& operator<<(ostream& os, const vector<T>& _v) {
+ostream& operator<<(ostream& os, const vector<T>& _v) {     // operator << overloading for printing vector of points
     for (auto&& el : _v) std::cout << el << endl;
     return os;
     }
 
 template <typename C>
-double lineByTwoPoint(const C& X, const C& X1Y1, const C& X2Y2) {
+double lineByTwoPoint(const C& X, const C& X1Y1, const C& X2Y2) { // defining a position of a point in relation to line
     return X->getX() * 
         (X2Y2->getY() - X1Y1->getY()) +
         X->getY() *
@@ -121,7 +121,7 @@ double lineByTwoPoint(const C& X, const C& X1Y1, const C& X2Y2) {
 }
 
 template <typename C>
-void PolygonBuild(C& _V) {
+void PolygonBuild(C& _V) {                                  // building konvexes polygon by points
     double onOtherSide{ 0 };
     size_t onLeftSide{ 0 };
     size_t onRightSide{ 0 };
@@ -161,12 +161,11 @@ void PolygonBuild(C& _V) {
 }
 
 template <typename C>
-double PolygonSquare(const C& _V) {
+double PolygonSquare(const C& _V) {                 // defining square of polygon
     double ps1{ 0 };
     double ps2{ 0 };
     auto n{ _V.size() };
     if (n == 0) return 0;
- //   cout << "N is " << n << endl;
     for (size_t i{ 0 }; i < n - 1; ++i) {
         ps1 += _V[i].getX() * _V[i + 1].getY();
         ps2 += _V[i + 1].getX() * _V[i].getY();
@@ -180,7 +179,7 @@ double PolygonSquare(const C& _V) {
 }
 
 template <typename C>
-bool PolygonContainsAPoint(const C& _V, const Point& point) {
+bool PolygonContainsAPoint(const C& _V, const Point& point) {       // defininng whether a point is inside of a polygon
     auto it{ std::begin(_V) };
     short minus{ 0 };
     short plus{ 0 };
@@ -198,7 +197,7 @@ bool PolygonContainsAPoint(const C& _V, const Point& point) {
 }
 
 template <typename C>
-bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2_1, const C& point2_2, Point& _temp) {
+bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2_1, const C& point2_2, Point& _temp) {  // defining whether two line crosses or doesn't
     double n{ 0 };
     if (point1_2.getY() - point1_1.getY() != 0) {
         double q = (point1_2.getX() - point1_1.getX()) / (point1_1.getY() - point1_2.getY());
@@ -228,7 +227,7 @@ bool PolygonsSidesCrossing(const C& point1_1, const C& point1_2, const C& point2
 }
 
 template <typename C>
-C PolygonsCrossing(const C& _V1, const C& _V2) {
+C PolygonsCrossing(const C& _V1, const C& _V2) {                        // building a polygon by crossing two polygon if it's possible
     vector<Point> crossVector;
     auto begin_v1{ begin(_V1) };
     auto begin_v2{ begin(_V2) };
@@ -264,12 +263,12 @@ C PolygonsCrossing(const C& _V1, const C& _V2) {
         }
         ++begin_v1;
     }
-    if (crossVector.size() != 0)
+    if (crossVector.size() > 2)
         PolygonBuild(crossVector);
     return crossVector;
 }
 
-void findRealPositionForXandY(size_t& lat, string& line) {
+void findRealPositionForXandY(size_t& lat, string& line) {              // searching position of latitude in files because the latitude has different position in different files
     size_t tabPos{};
     for (char& c : line) {
         if (c == '\t')
@@ -279,13 +278,13 @@ void findRealPositionForXandY(size_t& lat, string& line) {
 }
 
 template <typename T>
-double twoPointDistance(const T& A, const T& B) {
+double twoPointDistance(const T& A, const T& B) {                       // distance between two points
     return sqrt(pow(A.getX() - B.getX(), 2) +
                 pow(A.getY() - B.getY(), 2));
 }
 
 template <typename C, typename T>
-double ShortestWay(C& _V, T& base) {
+double ShortestWay(C& _V, T& base) {                                    // defining shortest way
     double distance{ 0 };
     double mindistance{ DBL_MAX };
     double currentdistance{ 0 };
@@ -317,40 +316,9 @@ double ShortestWay(C& _V, T& base) {
     }
     return distance;
 }
-
-int main() {
-
-    vector<vector<Point>> BigData;
- //   BigData.reserve(100);
-    vector<double> Distances;
-
-    ifstream waypoint{ "waypoint.txt" };
-    if (!waypoint.is_open()) {
-        std::cout << "File \"Waypoint.txt\" not found!" << endl;
-        return -1;
-    }
-    ifstream depot{ "depot.txt" };
-    if (!depot.is_open()) {
-        std::cout << "File \"Depot.txt\" not found!" << endl;
-        return -1;
-    }
-
-    string lineFromWaypoint{};
-    string lineFromDepot{};
-    auto _begin{ depot.tellg() };
-    int counter{ 0 };
-    size_t latitudeitudeLineNumber{};
-    getline(depot, lineFromDepot);
-    findRealPositionForXandY(latitudeitudeLineNumber,
-        lineFromDepot);
-    getline(depot, lineFromDepot);
-    Point Base(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
-
-    double ShortestDistances{ 0 };
-    double RealDistances{ 0 };
-
-
-    getline(waypoint, lineFromWaypoint);
+ // reading data and building polygons
+template <typename It, typename Pos, typename StrFromFile, typename DataPoint, typename DataDouble, typename Latitude>
+void ReadingAndBuildingPolygons(It& waypoint, It& depot, Pos& _begin, StrFromFile& lineFromWaypoint, StrFromFile& lineFromDepot, DataPoint& BigData, DataDouble& Distances, Latitude& latitudeitudeLineNumber) {
     while (true) {
         getline(waypoint, lineFromWaypoint);
         if (waypoint.eof()) break;
@@ -368,48 +336,76 @@ int main() {
                 getline(depot, lineFromDepot);
                 if (lineFromDepot.substr(0, lineFromDepot.find('\t', 0)) == lineFromWaypoint) {
                     BigData.back().push_back(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
-                    //cout << BigData.back().back() << "\t";
-                    //cout << "line "<<lineFromWaypoint<<" "<<++counter << endl;
                     break;
                 }
             }
             getline(waypoint, lineFromWaypoint);
         }
-     //   _getch();
-        BigData.back().erase(std::unique(BigData.back().begin(),BigData.back().end()),BigData.back().end());
-      //  BigData.back().shrink_to_fit();
+        BigData.back().erase(std::unique(BigData.back().begin(), BigData.back().end()), BigData.back().end());
+    }
+}
+
+int main() {
+
+    vector<vector<Point>> BigData;      // polygons by points (coverage area of one route)
+    vector<double> Distances;           // sum of distances within one route
+
+    ifstream waypoint{ "waypoint.txt" };                    // depot file opening
+    if (!waypoint.is_open()) {
+        std::cout << "File \"Waypoint.txt\" not found!" << endl;
+        return -1;
+    }
+    ifstream depot{ "depot.txt" };                          // waypoint file opening
+    if (!depot.is_open()) {
+        std::cout << "File \"Depot.txt\" not found!" << endl;
+        return -1;
     }
 
-    //BigData.shrink_to_fit();
+    string lineFromWaypoint{};                  // string from waypoint.txt
+    string lineFromDepot{};                     // strig from depot.txt
+    auto _begin{ depot.tellg() };               // fixing beginning of depot.txt file
+    size_t latitudeitudeLineNumber{};           // columb number of latitude in depot.txt
+    double BigSquare{};                         // common square of all polygons
+    double ShortestDistances{ 0 };              // shortest distance
+    double RealDistances{ 0 };                  // real distance
+    double CrossSquare{};                       // square of polygon ceossing (intersection)
+
+    getline(depot, lineFromDepot);              // reading first line in depot file for defining a colunm number 
+    findRealPositionForXandY(latitudeitudeLineNumber,
+        lineFromDepot);
+    getline(depot, lineFromDepot);              // reading second line in depot file for defining coordinates of base
+    Point Base(readDepotCoord(lineFromDepot, latitudeitudeLineNumber));
+
+    getline(waypoint, lineFromWaypoint);        // reading first line in waypoint.txt for ignoring it and passing inputfile iterator to second string
+
+    ReadingAndBuildingPolygons(waypoint, depot, // calling function for reading data and building polygons
+        _begin,
+        lineFromWaypoint, lineFromDepot,
+        BigData, Distances,
+        latitudeitudeLineNumber);
+
     for (auto&& areas : Distances)
         RealDistances += areas;
-
-    for (auto&& areas : BigData)
-        ShortestDistances += ShortestWay(areas, Base);
-
-    double BigSquare{};
 
     for (auto&& areas : BigData) {
         BigSquare += PolygonSquare(areas);
     }
 
- //   cout << Distances;
-
-    double CrossSquare{};
-    for (auto it{ begin(BigData) }; it != prev(end(BigData)); ++it)
+    for (auto it{ begin(BigData) }; it != prev(end(BigData)); ++it)         // calling function for defining square of all polygon intersection
         for (auto it2{ next(it) }; it2 != end(BigData); ++it2) {
-            //cout << *it << "--";
-            //cout << *it2 << endl;
             CrossSquare += PolygonSquare(PolygonsCrossing(*it, *it2));
         }
+    for (auto&& areas : BigData)
+        ShortestDistances += ShortestWay(areas, Base);                      // calling function for defining shortest way
 
-    std::cout << "BigSquare = " << BigSquare << endl;
+    std::cout << "BigSquare = " << BigSquare << endl;                       // printing to console
     std::cout << "CrossSquare = " << CrossSquare << endl;
     std::cout << "Percent is " << CrossSquare / BigSquare * 100<<endl;
     std::cout << "Shortest distance is " << ShortestDistances * ANGLETOLENGTH << endl;
     std::cout<< "Real distance is " << RealDistances << endl;
     std::cout << "Percent is " << (ShortestDistances*ANGLETOLENGTH) / RealDistances * 100 << endl;
-    waypoint.close();
+
+    waypoint.close();                                                       // closing files
     depot.close();
     return 0;
 }
